@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AquaLedger – Smart Water Billing (Final)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#f4f5fb; --bg-alt:#ffffff; --primary:#2f6bff; --accent:#ffb300; --text:#1f2933; --text-soft:#6b7280;
+      --border-soft:#e5e7eb; --radius-lg:26px; --radius-md:18px; --shadow-soft:0 18px 45px rgba(15,23,42,0.08); --shadow-subtle:0 6px 20px rgba(15,23,42,0.05);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Inter",sans-serif;background:radial-gradient(circle at top left,#f7fbff 0,#f4f5fb 40%,#eef1ff 100%);color:var(--text);min-height:100vh;display:flex;flex-direction: column;
+align-items:stretch;justify-content:center}
+    .hidden{display:none!important}
+    /* Login */
+    .login-shell{width:100%;max-width:1400px;display:flex;align-items:stretch;justify-content:center;padding:32px}
+    .login-card{background:var(--bg-alt);border-radius:32px;box-shadow:var(--shadow-soft);display:flex;flex:1;overflow:hidden;min-height:520px}
+    .login-visual{flex:1.1;padding:40px;background:radial-gradient(circle at top,#2f6bff1a,transparent 65%),#f5f7ff;display:flex;flex-direction:column;justify-content:space-between}
+    .brand-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.8);box-shadow:var(--shadow-subtle);font-size:12px;color:var(--text-soft)}
+    .brand-logo{width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,#2f6bff,#1fa2ff);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px}
+    .login-visual h1{margin-top:40px;font-size:34px;line-height:1.15}
+    .login-visual p{margin-top:14px;color:var(--text-soft);max-width:320px;font-size:14px}
+    .login-mini-card{margin-top:40px;background:white;border-radius:24px;padding:18px 18px 14px;box-shadow:var(--shadow-subtle)}
+    .login-form-area{flex:0.9;padding:40px 48px;background:white;display:flex;flex-direction:column;justify-content:center}
+    .form-group{margin-bottom:18px}
+    .form-label{font-size:13px;margin-bottom:6px;display:block;color:var(--text-soft)}
+    .form-control{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border-soft);font-size:14px;background:#f9fafb;outline:none;transition:all .15s}
+    .form-control:focus{background:white;border-color:var(--primary);box-shadow:0 0 0 1px rgba(47,107,255,0.4)}
+    .btn{border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:11px 22px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:linear-gradient(135deg,#2f6bff,#2563eb);color:white;box-shadow:0 15px 30px rgba(37,99,235,0.35)}
+    .btn-ghost{background:transparent;color:var(--text-soft)}
+    .pill{padding:6px 10px;border-radius:999px;background:#f3f4ff;font-size:13px;color:var(--text-soft)}
+    /* App */
+    .app-shell{width:100%;max-width:1440px;min-height:100vh;display:flex;padding:24px;gap:18px}
+    .sidebar{width:260px;background:rgba(255,255,255,0.98);border-radius:28px;box-shadow:var(--shadow-soft);padding:22px 18px;display:flex;flex-direction:column;justify-content:space-between}
+    .sidebar-header{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+    .sidebar-logo{width:36px;height:36px;border-radius:14px;background:radial-gradient(circle at 10% 0,#7dd3fc 0,#2f6bff 35%,#1e40af 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px}
+    .nav-section-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin:6px 4px}
+    .nav-list{list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:4px}
+    .nav-item{border-radius:999px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-soft);cursor:pointer}
+    .nav-item-icon{width:26px;height:26px;border-radius:999px;background:#f3f4ff;display:flex;align-items:center;justify-content:center;font-size:15px}
+    .nav-item.active{background:#eef2ff;color:var(--primary);transform:translateY(-1px)}
+    .main{flex:1;background:rgba(255,255,255,0.98);border-radius:32px;box-shadow:var(--shadow-soft);padding:22px 24px 24px;display:flex;flex-direction:column;gap:16px}
+    .main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .main-title h1{font-size:22px}
+    .card{background:#fdfdff;border-radius:var(--radius-lg);padding:18px 18px 16px;box-shadow:var(--shadow-subtle);display:flex;flex-direction:column;gap:10px}
+    .grid{display:grid;grid-template-columns:2.1fr 1.3fr;gap:16px}
+    .chart-container{position:relative;width:100%;height:230px}
+    .rooms-card{margin-top:4px;border-radius:var(--radius-lg);background:#fdfdff;padding:16px 18px 14px;box-shadow:var(--shadow-subtle);display:flex;flex-direction:column;gap:12px}
+    .rooms-header{display:flex;justify-content:space-between;align-items:center}
+    .rooms-table{width:100%;border-collapse:collapse;font-size:13px}
+    .rooms-table th,.rooms-table td{padding:8px 4px;text-align:left}
+    .rooms-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;border-bottom:1px solid #edf0ff}
+    .room-tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#eff6ff;color:var(--primary)}
+    .room-tag.common{background:#fef3c7;color:#92400e}
+    .status-pill{font-size:11px;padding:4px 8px;border-radius:999px;background:#ecfdf5;color:#047857}
+    .clickable-block:hover{background:#f7f9ff;transform:translateY(-2px);transition:all .12s}
+    .overview-boxes{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .overview-card{flex:1;min-width:180px; padding:12px;border-radius:14px;background:white;box-shadow:var(--shadow-subtle);display:flex;flex-direction:column;gap:8px;cursor:pointer}
+    .overview-card h3{font-size:14px;margin-bottom:0}
+    .overview-card p{font-size:12px;color:var(--text-soft);margin:0}
+    .back-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+    .badge{font-size:11px;padding:4px 7px;border-radius:999px;background:#f3f4ff;color:var(--text-soft)}
+    /* Payments */
+    .payment-card{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:12px;background:#fff;box-shadow:var(--shadow-subtle)}
+    .paid-btn{padding:6px 10px;border-radius:999px;background:#10b981;color:white;border:none;cursor:pointer}
+    .unpaid-btn{padding:6px 10px;border-radius:999px;background:#ef4444;color:white;border:none;cursor:pointer}
+    .toggle-row{display:flex;gap:8px;align-items:center}
+    @media(max-width:1024px){.login-visual{display:none}.app-shell{flex-direction:column;padding:14px}.sidebar{width:100%;flex-direction:row;align-items:center;padding:14px 16px;gap:16px}.grid{grid-template-columns:1fr}.chart-container{height:200px}}
+  .alert-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#ef4444;
+  color:white;
+  font-size:11px;
+  font-weight:700;
+  box-shadow:0 0 8px rgba(239,68,68,0.4);
+}
+.status-leakage {
+  background:#fee2e2 !important;
+  color:#b91c1c !important;
+  font-weight:600;
+}
+
+/* Footer */
+.app-footer {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 13px;
+  color: var(--text-soft);
+  /* background: rgba(255,255,255,0.85);
+  border-top: 1px solid var(--border-soft); */
+  backdrop-filter: blur(8px);
+
+  display: flex;
+  justify-content: flex-start;  
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+}
+
+#app {
+  flex-grow: 1;
+}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-page" class="login-shell">
+  <div class="login-card">
+    <div class="login-visual">
+      <div>
+        <div class="brand-pill"><div class="brand-logo">A</div><span>Smart Water Billing</span></div>
+        <h1>Monitor every drop,<br/>bill with confidence.</h1>      
+      </div>
+    </div>
+
+    <div class="login-form-area">
+      <h2>Login</h2>
+      <p>Sign in to view live water usage and billing for your property.</p>
+
+      <form id="login-form">
+        <div class="form-group"><label class="form-label" for="username">Username</label><input id="username" type="text" placeholder="e.g. blockA-admin" class="form-control" /></div>
+        <div class="form-group"><label class="form-label" for="password">Password</label><input id="password" type="password" placeholder="••••••••" class="form-control" /></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:var(--text-soft)">Demo login – any credentials work.</span>
+          <button type="submit" class="btn btn-primary">Continue <span style="font-size:16px">→</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app-shell hidden">
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-header">
+        <div class="sidebar-logo">A</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:16px;font-weight:600">AquaLedger</span>
+          <span style="font-size:11px;color:var(--text-soft)">Smart Meter Suite</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-section-title">Overview</div>
+        <ul class="nav-list">
+          <li class="nav-item active" data-page="dashboard"><div class="nav-item-icon">📊</div><span>Dashboard</span></li>
+          <li class="nav-item" data-page="payments"><div class="nav-item-icon">💳</div><span>Payments</span></li>
+          <li class="nav-item" data-page="settings"><div class="nav-item-icon">⚙️</div><span>Settings</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:30px;padding-top:16px;border-top:1px dashed #e5e7f0">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;background:#f9fafb">
+        <div style="width:30px;height:30px;border-radius:999px;background:linear-gradient(135deg,#f97316,#ec4899);display:flex;align-items:center;justify-content:center;color:white;font-weight:600">LD</div>
+        <div style="font-size:12px;display:flex;flex-direction:column"><span id="user-name">Landlord</span><span style="font-size:11px;color:var(--text-soft)">Admin • Block A</span></div>
+      </div>
+      <button id="logout-btn" class="btn btn-ghost" style="margin-top:10px;width:100%;justify-content:center">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="main-header">
+      <div class="main-title"><h1 id="page-title">Dashboard</h1><span style="font-size:12px;color:var(--text-soft)">Live building water overview & billing status.</span></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="pill"><span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#34d399;margin-right:8px"></span>Live meters online</div>
+        <button class="btn btn-ghost" style="font-size:13px">Export CSV</button>
+      </div>
+    </header>
+
+    <section class="content">
+      <!-- DASHBOARD -->
+      <div id="page-dashboard">
+        <div class="grid">
+          <!-- Bar chart -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:15px;font-weight:600">Monthly Consumption Overview</div><div style="font-size:11px;color:var(--text-soft);margin-top:2px">Total building usage per month (m³)</div></div>
+              <div class="badge">Last 12 months</div>
+            </div>
+            <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+          </div>
+
+          <!-- Pie chart -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:15px;font-weight:600">Shared vs Private Usage</div><div style="font-size:11px;color:var(--text-soft);margin-top:2px">Current month split</div></div>
+              <div class="badge">Real-time snapshot</div>
+            </div>
+            <div class="chart-container"><canvas id="splitChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- BLOCKS + SHARED -->
+        <div class="rooms-card" style="margin-top:12px">
+          <div class="rooms-header">
+            <div><div style="font-size:16px;font-weight:600">Apartment Blocks & Shared Areas</div><div style="font-size:12px;color:var(--text-soft)">Select a block or category to view meters</div></div>
+            <div style="display:flex;gap:8px"><div class="badge">Live</div></div>
+          </div>
+
+          <!-- Blocks table -->
+          <table class="rooms-table" style="margin-top:6px">
+            <thead><tr><th>Block / Category</th><th>Total Consumption</th><th>Estimated Bill</th><th>Items</th></tr></thead>
+            <tbody id="blockTableBody"></tbody>
+          </table>
+
+          <!-- Shared Areas quick view -->
+          <div style="margin-top:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-weight:600">Shared Areas</div>
+            </div>
+            <div class="overview-boxes" id="overviewBoxes"></div>
+          </div>
+
+          <!-- Rooms details (hidden by default) -->
+          <div id="roomsView" class="hidden" style="margin-top:14px">
+            <div class="back-row">
+              <button class="btn btn-ghost" id="backToBlocks">← Back</button>
+              <div style="font-weight:600" id="roomsTitle">Rooms</div>
+            </div>
+            <table class="rooms-table">
+              <thead><tr><th>Meter / Room</th><th>Meter ID</th><th>Type</th><th>Consumption</th><th>Current Bill</th><th>Status</th></tr></thead>
+              <tbody id="roomTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAYMENTS -->
+      <div id="page-payments" class="hidden">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-size:15px;font-weight:600">Payments</div><div style="font-size:12px;color:var(--text-soft)">Track who has paid. Toggle to mark paid/unpaid.</div></div>
+            <div class="badge">Local demo</div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:260px" id="paymentsBlocksContainer">
+              <!-- Blocks with totals and expand -->
+            </div>
+
+            <div style="width:320px; min-width:220px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:8px">Shared Areas — Total Bill</div>
+              <div class="payment-card" id="sharedPaymentCard">
+                <div>
+                  <div style="font-weight:600" id="sharedTitle">Shared Areas</div>
+                  <div style="font-size:12px;color:var(--text-soft)" id="sharedSub">Consumption: 0 m³</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:600;font-size:16px" id="sharedTotal">₹0</div>
+                  <div style="font-size:12px;color:var(--text-soft)">No toggle (landlord)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="paymentsDetails" style="margin-top:16px">
+            <!-- When a block is expanded, show individuals with toggle -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="hidden">
+        <div style="display:grid;grid-template-columns:1.6fr 1.4fr;gap:16px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:15px;font-weight:600">Account & Security</div><div style="font-size:11px;color:var(--text-soft);margin-top:2px">Update landlord credentials.</div></div>
+            </div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:12px">
+              <div style="font-size:12px;font-weight:500">Change Password</div>
+              <div class="form-group"><label class="form-label" for="currentPassword">Current Password</label><input id="currentPassword" type="password" class="form-control" /></div>
+              <div class="form-group"><label class="form-label" for="newPassword">New Password</label><input id="newPassword" type="password" class="form-control" /></div>
+              <div class="form-group"><label class="form-label" for="confirmPassword">Confirm New Password</label><input id="confirmPassword" type="password" class="form-control" /></div>
+              <button class="btn btn-primary" id="savePasswordBtn" style="align-self:flex-start">Save password</button>
+              <span id="passwordStatus" style="font-size:12px;color:var(--text-soft)"></span>
+            </div>
+            <hr style="margin:20px 0;border:none;border-top:1px dashed #e5e7f0">
+            <div>
+              <div style="font-size:12px;font-weight:500">Tariffs</div>
+              <p style="font-size:12px;color:var(--text-soft);margin-bottom:8px">Define what each cubic metre (m³) of water costs.</p>
+              <div style="display:flex;gap:8px;align-items:center"><span class="badge">Base fee (₹)</span><input id="tariffBase" type="number" value="150" class="form-control" style="flex:1"/></div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><span class="badge">Per m³ – Private</span><input id="tariffPrivate" type="number" value="35" class="form-control" style="flex:1"/></div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><span class="badge">Per m³ – Shared</span><input id="tariffShared" type="number" value="28" class="form-control" style="flex:1"/></div>
+              <button class="btn btn-ghost" id="saveTariffBtn" style="margin-top:10px;padding-inline:14px;font-size:12px">Save tariff scheme</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:15px;font-weight:600">Meter Groupings</div><div style="font-size:11px;color:var(--text-soft);margin-top:2px">Group meters into logical spaces.</div></div>
+              <div class="badge">Blocks</div>
+            </div>
+
+            <div style="margin-top:10px">
+              <div style="font-size:12px;font-weight:500">Existing Groups</div>
+              <div id="groupList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+
+            <hr style="margin:18px 0;border:none;border-top:1px dashed #e5e7f0">
+
+            <div>
+              <div style="font-size:12px;font-weight:500">Add New Group</div>
+              <div class="form-group"><label class="form-label" for="groupName">Group name</label><input id="groupName" class="form-control" /></div>
+              <div class="form-group"><label class="form-label" for="groupType">Type</label>
+                <select id="groupType" class="form-control"><option value="common">Shared Areas</option><option value="private">Private units</option></select>
+              </div>
+              <div class="form-group"><label class="form-label" for="groupMeters">Number of meters</label><input id="groupMeters" type="number" class="form-control" /></div>
+              <button id="addGroupBtn" class="btn btn-primary" style="align-self:flex-start">Add group</button>
+              <span id="groupStatus" style="display:block;margin-top:6px;font-size:12px;color:var(--text-soft)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<footer class="app-footer">
+  <span>Powered by</span>
+  <img src="logo.png" alt="Company Logo" class="footer-logo">
+</footer>
+
+
+<script>
+  // ---------- SIMPLE STATE ----------
+  const loginPage = document.getElementById('login-page');
+  const appShell = document.getElementById('app');
+  const loginForm = document.getElementById('login-form');
+  const userNameSpan = document.getElementById('user-name');
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim() || 'Landlord';
+    userNameSpan.textContent = username;
+    loginPage.classList.add('hidden');
+    appShell.classList.remove('hidden');
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    appShell.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+  });
+
+  // NAVIGATION
+  const navItems = document.querySelectorAll('.nav-item');
+  const pages = {
+    dashboard: document.getElementById('page-dashboard'),
+    payments: document.getElementById('page-payments'),
+    settings: document.getElementById('page-settings')
+  };
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      navItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      Object.keys(pages).forEach(key => pages[key].classList.toggle('hidden', key !== page));
+      document.getElementById('page-title').textContent = page === 'dashboard' ? 'Dashboard' : (page === 'payments' ? 'Payments' : 'Settings');
+      // Clear paymentsDetails when switching away
+      if (page !== 'payments') document.getElementById('paymentsDetails').innerHTML = '';
+    });
+  });
+
+  // ---------- DEMO DATA ----------
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthlyTotals = [62,81,74,43,79,94,73,75,61,86,37,68];
+
+  // rooms & meters
+  const roomsData = [
+    // Block A
+    { name: 'A-101', meterId: 'M-A101', block:'A', type: 'private', consumption: 8.7, bill: 4230, status: 'Leakage detected', paid: false },
+    { name: 'A-102', meterId: 'M-A102', block:'A', type: 'private', consumption: 9.4, bill: 4550, status: 'On track', paid: true },
+    { name: 'A-103', meterId: 'M-A103', block:'A', type: 'private', consumption: 11.2, bill: 5120, status: 'High usage', paid: false },
+
+    // Block B
+    { name: 'B-101', meterId: 'M-B101', block:'B', type: 'private', consumption: 7.8, bill: 3980, status: 'On track', paid: false },
+    { name: 'B-102', meterId: 'M-B102', block:'B', type: 'private', consumption: 6.4, bill: 3520, status: 'Low', paid: true },
+
+    // Shared Areas (merged Common + Outdoors)
+    { name: 'Lobby', meterId: 'M-S-Lobby', block:null, type: 'shared', consumption: 5.2, bill: 2460, status: 'On track' },
+    { name: 'Rooftop Tank', meterId: 'M-S-Roof', block:null, type: 'shared', consumption: 14.3, bill: 5220, status: 'High usage' },
+    { name: 'Pump Room', meterId: 'M-S-Pump', block:null, type: 'shared', consumption: 3.9, bill: 1780, status: 'On track' },
+    { name: 'Garden', meterId: 'M-S-Garden', block:null, type: 'shared', consumption: 6.9, bill: 2690, status: 'On track' },
+    { name: 'Borewell', meterId: 'M-S-Bore', block:null, type: 'shared', consumption: 4.5, bill: 1900, status: 'On track' }
+  ];
+
+  // Derived groups
+  const blocksObj = {
+    A: roomsData.filter(r => r.block === 'A'),
+    B: roomsData.filter(r => r.block === 'B')
+  };
+  const sharedMeters = roomsData.filter(r => r.type === 'shared');
+  const privateMeters = roomsData.filter(r => r.type === 'private');
+
+  // ---------- CHARTS ----------
+  let monthlyChart, splitChart;
+  function initCharts() {
+    const ctxBar = document.getElementById('monthlyChart').getContext('2d');
+    const ctxPie = document.getElementById('splitChart').getContext('2d');
+    if (monthlyChart) monthlyChart.destroy();
+    if (splitChart) splitChart.destroy();
+
+    monthlyChart = new Chart(ctxBar, {
+      type: 'bar',
+      data: { labels: months, datasets: [{ label:'Total Consumption (m³)', data: monthlyTotals, borderRadius:14, backgroundColor:'#cfe1ff', hoverBackgroundColor:'#2f6bff' }] },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => `${ctx.parsed.y} m³` } } },
+        scales:{ x:{ grid:{display:false}, ticks:{color:'#9ca3af', font:{size:11}} }, y:{ beginAtZero:true, grid:{color:'#eef2ff'}, ticks:{color:'#9ca3af', font:{size:11}} } }
+      }
+    });
+
+    const sharedSum = sharedMeters.reduce((a,b)=>a+b.consumption,0);
+    const privateSum = privateMeters.reduce((a,b)=>a+b.consumption,0);
+
+    splitChart = new Chart(ctxPie, {
+      type: 'doughnut',
+      data: { labels:['Shared Areas','Apartments'], datasets:[{ data:[sharedSum, privateSum], backgroundColor:['#dbeafe','#2f6bff'], hoverOffset:6 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'70%', plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,font:{size:11}} }, tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${ctx.parsed} m³` } } } }
+    });
+  }
+
+  // ---------- BLOCK TABLE + Overview boxes ----------
+  const blockTableBody = document.getElementById('blockTableBody');
+  const overviewBoxes = document.getElementById('overviewBoxes');
+
+  function calcStats(items) {
+    const totalConsumption = items.reduce((a,b)=>a+(b.consumption||0),0);
+    const totalBill = items.reduce((a,b)=>a+(b.bill||0),0);
+    return { totalConsumption, totalBill };
+  }
+
+  function renderBlocksAndOverview() {
+    blockTableBody.innerHTML = '';
+
+    // Blocks rows
+    Object.keys(blocksObj).forEach(blockName => {
+      const rooms = blocksObj[blockName];
+      const s = calcStats(rooms);
+      const tr = document.createElement('tr');
+      tr.className = 'clickable-block';
+      tr.style.cursor = 'pointer';
+      tr.dataset.category = 'block';
+      tr.dataset.key = blockName;
+      // Check leakage
+const leakageExists = rooms.some(r => r.status.toLowerCase() === 'leakage detected');
+
+tr.innerHTML = `
+  <td style="position:relative;">
+    <strong>Block ${blockName}</strong>
+    ${leakageExists ? `<span class="alert-badge" style="position:absolute;top:-6px;right:-16px;">!</span>` : ""}
+  </td>
+  <td>${s.totalConsumption.toFixed(1)} m³</td>
+  <td>₹${s.totalBill.toLocaleString('en-IN')}</td>
+  <td>${rooms.length}</td>
+`;
+
+      blockTableBody.appendChild(tr);
+    });
+
+    // Shared row
+    const sharedStats = calcStats(sharedMeters);
+    const trShared = document.createElement('tr');
+    trShared.className = 'clickable-block';
+    trShared.style.cursor = 'pointer';
+    trShared.dataset.category = 'shared';
+    trShared.innerHTML = `<td><strong>Shared Areas</strong></td><td>${sharedStats.totalConsumption.toFixed(1)} m³</td><td>₹${sharedStats.totalBill.toLocaleString('en-IN')}</td><td>${sharedMeters.length}</td>`;
+    blockTableBody.appendChild(trShared);
+
+    // Overview boxes
+    overviewBoxes.innerHTML = '';
+    Object.keys(blocksObj).forEach(blockName=>{
+      const rooms = blocksObj[blockName];
+      const s = calcStats(rooms);
+      const card = document.createElement('div');
+      card.className = 'overview-card';
+      card.dataset.category = 'block';
+      card.dataset.key = blockName;
+      const leakageExists = rooms.some(r => r.status.toLowerCase() === 'leakage detected');
+
+card.innerHTML = `
+  <h3 style="display:flex;align-items:center;gap:6px;">
+    Block ${blockName}
+    ${leakageExists ? `<span class="alert-badge">!</span>` : ""}
+  </h3>
+  <p>${s.totalConsumption.toFixed(1)} m³ • ₹${s.totalBill.toLocaleString('en-IN')}</p>
+`;
+
+      overviewBoxes.appendChild(card);
+    });
+
+    const sCard = document.createElement('div');
+    sCard.className = 'overview-card';
+    sCard.dataset.category = 'shared';
+    sCard.innerHTML = `<h3>Shared Areas</h3><p>${sharedStats.totalConsumption.toFixed(1)} m³ • ₹${sharedStats.totalBill.toLocaleString('en-IN')}</p>`;
+    overviewBoxes.appendChild(sCard);
+  }
+
+  // ---------- ROOMS detail view ----------
+  const roomsView = document.getElementById('roomsView');
+  const roomTableBody = document.getElementById('roomTableBody');
+  const roomsTitle = document.getElementById('roomsTitle');
+  const backToBlocksBtn = document.getElementById('backToBlocks');
+
+  function showItemsForCategory(category, key=null) {
+    let items = [];
+    if (category === 'block') items = blocksObj[key] || [];
+    else if (category === 'shared') items = sharedMeters;
+
+    roomsTitle.innerText = category === 'block' ? `Meters — Block ${key}` : 'Meters — Shared Areas';
+    roomTableBody.innerHTML = '';
+    items.forEach(i => {
+  const tr = document.createElement('tr');
+
+  // NEW: apply red styling if leakage
+  const statusClass =
+    i.status.toLowerCase() === "leakage detected"
+      ? "status-pill status-leakage"
+      : "status-pill";
+
+  tr.innerHTML = `
+    <td>${i.name}</td>
+    <td>${i.meterId || '-'}</td>
+    <td>${i.type}</td>
+    <td>${(i.consumption || 0).toFixed(1)} m³</td>
+    <td>₹${(i.bill || 0).toLocaleString('en-IN')}</td>
+    <td><span class="${statusClass}">${i.status}</span></td>
+  `;
+
+  roomTableBody.appendChild(tr);
+});
+
+    roomsView.classList.remove('hidden');
+    roomsView.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  // Click handlers for table rows / overview
+  document.addEventListener('click', (e) => {
+    const blockRow = e.target.closest('.clickable-block');
+    if (blockRow) {
+      const cat = blockRow.dataset.category;
+      const key = blockRow.dataset.key || null;
+      showItemsForCategory(cat, key);
+    }
+    const ov = e.target.closest('.overview-card');
+    if (ov) {
+      const cat = ov.dataset.category;
+      const key = ov.dataset.key || null;
+      showItemsForCategory(cat, key);
+    }
+  });
+
+  backToBlocksBtn.addEventListener('click', () => {
+    roomsView.classList.add('hidden');
+  });
+
+  // ---------- PAYMENTS PAGE ----------
+  const paymentsBlocksContainer = document.getElementById('paymentsBlocksContainer');
+  const paymentsDetails = document.getElementById('paymentsDetails');
+  const sharedTitle = document.getElementById('sharedTitle');
+  const sharedSub = document.getElementById('sharedSub');
+  const sharedTotal = document.getElementById('sharedTotal');
+
+  // Calculate payments totals and render blocks
+  function calcPaymentsForBlock(blockName) {
+    const items = blocksObj[blockName] || [];
+    const total = items.reduce((a,b)=>a+(b.bill||0),0);
+    const paid = items.reduce((a,b)=>a + ((b.paid)?(b.bill||0):0),0);
+    const unpaid = total - paid;
+    return { total, paid, unpaid, items };
+  }
+
+  function renderPaymentsBlocks() {
+    paymentsBlocksContainer.innerHTML = '';
+    Object.keys(blocksObj).forEach(blockName=>{
+      const st = calcPaymentsForBlock(blockName);
+      const wrap = document.createElement('div');
+      wrap.style.marginBottom = '10px';
+      wrap.innerHTML = `
+        <div class="payment-card" data-block="${blockName}">
+          <div>
+            <div style="font-weight:600">Block ${blockName}</div>
+            <div style="font-size:12px;color:var(--text-soft)">${st.items.length} units • ₹${st.total.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:600">₹${st.unpaid.toLocaleString('en-IN')}</div>
+            <div style="font-size:12px;color:var(--text-soft)">${Math.round((st.paid / (st.total||1)) * 100)}% paid</div>
+          </div>
+        </div>
+      `;
+      paymentsBlocksContainer.appendChild(wrap);
+    });
+
+    // Shared Areas summary card (no toggle)
+    const sharedStats = calcStats(sharedMeters);
+    sharedTitle.innerText = 'Shared Areas';
+    sharedSub.innerText = `Consumption: ${sharedStats.totalConsumption.toFixed(1)} m³`;
+    sharedTotal.innerText = `₹${sharedStats.totalBill.toLocaleString('en-IN')}`;
+  }
+
+  // Show individual payments for a block
+  function showPaymentsForBlock(blockName) {
+    const { items, total } = calcPaymentsForBlock(blockName);
+    paymentsDetails.innerHTML = '';
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '10px';
+    header.innerHTML = `<div style="font-weight:600">Payments — Block ${blockName}</div><div style="font-size:12px;color:var(--text-soft)">Total due: ₹${total.toLocaleString('en-IN')}</div>`;
+    paymentsDetails.appendChild(header);
+
+    const table = document.createElement('table');
+    table.className = 'rooms-table';
+    table.innerHTML = `<thead><tr><th>Unit</th><th>Consumption</th><th>Bill</th><th>Status</th><th>Action</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    items.forEach(u=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${u.name}</td>
+        <td>${u.consumption.toFixed(1)} m³</td>
+        <td>₹${u.bill.toLocaleString('en-IN')}</td>
+        <td id="status-${u.meterId}">${u.paid ? '<span class="pill" style="background:#d1fae5;color:#065f46">Paid</span>' : '<span class="pill" style="background:#fee2e2;color:#991b1b">Unpaid</span>'}</td>
+        <td id="action-${u.meterId}"></td>
+      `;
+      tbody.appendChild(tr);
+
+      // Action button container
+      const actionCell = tr.querySelector(`#action-${u.meterId}`);
+      const btnWrap = document.createElement('div');
+      btnWrap.className = 'toggle-row';
+
+      // Using Toggle UI (Option A): show Paid / Unpaid buttons
+      if (u.paid) {
+        const paidPill = document.createElement('button');
+        paidPill.className = 'paid-btn';
+        paidPill.textContent = 'Mark Unpaid';
+        paidPill.addEventListener('click', () => {
+          setPaymentStatus(u.meterId, false);
+          renderPaymentsBlocks();
+          showPaymentsForBlock(blockName);
+        });
+        btnWrap.appendChild(paidPill);
+      } else {
+        const unpaidBtn = document.createElement('button');
+        unpaidBtn.className = 'unpaid-btn';
+        unpaidBtn.textContent = 'Mark Paid';
+        unpaidBtn.addEventListener('click', () => {
+          setPaymentStatus(u.meterId, true);
+          renderPaymentsBlocks();
+          showPaymentsForBlock(blockName);
+        });
+        btnWrap.appendChild(unpaidBtn);
+      }
+
+      actionCell.appendChild(btnWrap);
+    });
+
+    table.appendChild(tbody);
+    paymentsDetails.appendChild(table);
+    table.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // Toggle payment status in local demo data
+  function setPaymentStatus(meterId, paid) {
+    const idx = roomsData.findIndex(r => r.meterId === meterId);
+    if (idx >= 0) {
+      roomsData[idx].paid = paid;
+    }
+  }
+
+  // Click handlers to open block payments
+  document.addEventListener('click', (e) => {
+    const pcard = e.target.closest('.payment-card[data-block]');
+    if (pcard) {
+      const blockName = pcard.dataset.block;
+      // Switch to Payments tab
+      navItems.forEach(i => i.classList.remove('active'));
+      document.querySelector('.nav-item[data-page="payments"]').classList.add('active');
+      Object.keys(pages).forEach(key => pages[key].classList.toggle('hidden', key !== 'payments'));
+      document.getElementById('page-title').textContent = 'Payments';
+      showPaymentsForBlock(blockName);
+    }
+  });
+
+  // ---------- GROUP LIST ----------
+  const groupListEl = document.getElementById('groupList');
+  const meterGroups = [
+    { name: 'Block A – Apartments', type: 'private', meters: 3 },
+    { name: 'Block A – Shared Areas', type: 'shared', meters: 3 },
+    { name: 'Block B – Apartments', type: 'private', meters: 2 },
+  ];
+  function renderGroups() {
+    groupListEl.innerHTML = '';
+    meterGroups.forEach(g => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '8px 10px';
+      row.style.borderRadius = '14px';
+      row.style.background = '#f5f6ff';
+      row.innerHTML = `<div style="display:flex;flex-direction:column"><span style="font-weight:500">${g.name}</span><span style="font-size:11px;color:var(--text-soft)">${g.meters} meter(s) • ${g.type === 'shared' ? 'Shared Areas' : 'Private units'}</span></div><div class="badge">${g.type === 'shared' ? 'Shared' : 'Private'}</div>`;
+      groupListEl.appendChild(row);
+    });
+  }
+  document.getElementById('addGroupBtn').addEventListener('click', () => {
+    const name = document.getElementById('groupName').value.trim();
+    const type = document.getElementById('groupType').value;
+    const meters = parseInt(document.getElementById('groupMeters').value,10) || 0;
+    const statusEl = document.getElementById('groupStatus');
+    if (!name || meters <= 0) { statusEl.textContent = 'Please enter a valid group name and meter count.'; statusEl.style.color = '#ef4444'; return; }
+    meterGroups.push({ name, type, meters });
+    renderGroups();
+    statusEl.textContent = 'Group added locally (demo only).';
+    statusEl.style.color = 'var(--text-soft)';
+    document.getElementById('groupName').value = ''; document.getElementById('groupMeters').value = '';
+  });
+
+  // ---------- Password save (demo) ----------
+  document.getElementById('savePasswordBtn').addEventListener('click', () => {
+    const newPwd = document.getElementById('newPassword').value;
+    const confirmPwd = document.getElementById('confirmPassword').value;
+    const status = document.getElementById('passwordStatus');
+    if (!newPwd || newPwd.length < 8) { status.textContent = 'Password must be at least 8 characters.'; status.style.color = '#ef4444'; return; }
+    if (newPwd !== confirmPwd) { status.textContent = 'New passwords do not match.'; status.style.color = '#ef4444'; return; }
+    status.textContent = 'Password updated locally (wire this to your backend).'; status.style.color = 'var(--text-soft)';
+  });
+
+  // Save tariff updates (affects display only)
+  document.getElementById('saveTariffBtn').addEventListener('click', () => {
+    // For demo, just show status
+    alert('Tariff saved locally (demo). Implement backend call to persist.');
+  });
+
+  // ---------- INIT ----------
+  window.addEventListener('load', () => {
+    initCharts();
+    renderBlocksAndOverview();
+    renderGroups();
+    renderPaymentsBlocks();
+  });
+
+  // redraw charts on resize
+  window.addEventListener('resize', () => { initCharts(); });
+
+</script>
+</body>
+</html>
